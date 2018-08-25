@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<title>What-i-write</title>
+
+		<style type="text/css">
+			
+			html, body {
+			    margin: 0;
+			    padding: 0;
+			    color: #000;
+			    font-family: monospace;
+			    font-size: 40px;
+			    background: #fff;
+			}
+			html{
+				padding: 20px;
+			}
+			div{
+			    /*position: absolute;*/
+			    /*top: 0;*/
+			    /*left: 0;*/
+			    /*width: 500px;*/
+			    /*height: 500px;*/
+			    /*line-height: 300px;*/
+			    /*z-index: 10;*/
+			    /*text-align: center;*/
+			    /*text-shadow: 0 0 3px #fff;*/
+			    /*cursor: pointer;*/
+			    /*border: 1px solid;*/
+			}
+			#canvas{
+				border: 2px solid black;
+				border-radius: 6px;
+			}
+			.visible{
+				display: block !important;
+			}
+			#loading{
+				position: fixed;
+				padding: 25px;
+				font-size: 25px;
+				background: blue;
+				color: white;
+				border-radius: 6px;
+				display: none;
+				bottom: 25px;
+			}
+		</style>		
+	</head>
+	<body>
+
+	<div class="wrap">
+		<canvas id="canvas"></canvas>
+	</div>
+	<button onclick="sendImage()">Recognize this number</button>
+	<h1>The Number written is : <span id="result"></span> </h1>
+	
+	<div id="loading">Loading....</div>
+
+	<script src="axios.min.js"></script>
+    <script type="text/javascript">
+		function $(el) {return document.getElementById(el.replace(/#/,''));};
+		var canvas = $('#canvas');
+		canvas.width = 500;
+		canvas.height = 500;
+		var context = canvas.getContext('2d');
+		context.fillStyle = "white";
+		context.fillRect(0, 0, canvas.width, canvas.height);
+		var start = function(coors) {
+		    context.beginPath();
+		    context.moveTo(coors.x, coors.y);
+		    this.isDrawing = true;
+		};
+		var move = function(coors) {
+		    if (this.isDrawing) {
+		        context.strokeStyle = "#000";
+		        context.lineJoin = "round";
+		        context.lineWidth = 20;
+		        context.lineTo(coors.x, coors.y);
+		        context.stroke();
+		    }
+		};
+		var stop = function(coors) {
+		    if (this.isDrawing) {
+		        this.touchmove(coors);
+		        this.isDrawing = false;
+		    }
+		};
+		var drawer = {
+		    isDrawing: false,
+		    mousedown: start,
+		    mousemove: move,
+		    mouseup: stop,
+		    touchstart: start,
+		    touchmove: move,
+		    touchend: stop
+		};
+		var draw = function(e) {
+		    var coors = {
+		        x: e.clientX || e.targetTouches[0].pageX,
+		        y: e.clientY || e.targetTouches[0].pageY
+		    };
+		    drawer[e.type](coors);
+		}
+		canvas.addEventListener('mousedown', draw, false);
+		canvas.addEventListener('mousemove', draw, false);
+		canvas.addEventListener('mouseup', draw, false);
+		canvas.addEventListener('touchstart', draw, false);
+		canvas.addEventListener('touchmove', draw, false);
+		canvas.addEventListener('touchend', draw, false);
+
+		var go = function(e) {
+		    this.parentNode.removeChild(this);
+		    draw(e);
+		};
+
+		// $('#go').addEventListener('mousedown', go, false);
+		// $('#go').addEventListener('touchstart', go, false);
+
+		// prevent elastic scrolling
+		document.body.addEventListener('touchmove', function(e) {
+		    e.preventDefault();
+		}, false);
+		// end body:touchmove
+		// window.onresize = function(e) {
+		//     canvas.width = 500;
+		//     canvas.height = 500;
+		// };
+
+		function canvasToImg() {
+	      var canvas = document.getElementById("canvas");
+	      var ctx=canvas.getContext("2d");
+	      // //draw a red box
+	      // ctx.fillStyle="#FF0000";
+	      // ctx.fillRect(10,10,30,30);
+
+	      var url = canvas.toDataURL();
+
+	      var newImg = document.createElement("img"); // create img tag
+	      newImg.src = url;
+	      document.body.appendChild(newImg); // add to end of your document
+	    }
+
+    	function sendImage(){
+    		
+    		var image_url = canvas.toDataURL()
+      		var newImg = document.createElement("img"); // create img tag
+      		newImg.src = image_url;
+      		// document.body.appendChild(newImg); // add to end of your document
+    		document.getElementById('loading').className = 'visible'
+    		axios.post('/recognize',{
+    			imgBase64: image_url
+    		}).then((response) => {
+    			console.log(response.data.result)
+    			document.getElementById("result").innerHTML = response.data.result
+    			document.getElementById('loading').className -= 'visible'
+    		})
+    	}
+
+	</script>
+	</body>
+</html>
